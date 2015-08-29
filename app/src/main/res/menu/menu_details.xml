@@ -1,0 +1,12 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="de.roida.app.WaterproofQuickcheck.DetailsActivity">
+    <item android:id="@+id/action_detailedView" android:title="@string/detailedView"
+        android:orderInCategory="100" app:showAsAction="never" />
+    <item android:id="@+id/action_settings" android:title="@string/settings"
+        android:orderInCategory="150" app:showAsAction="never" />
+    <item android:id="@+id/action_about" android:title="@string/about"
+        android:orderInCategory="300" app:showAsAction="never"
+        android:onClick="openAboutDialog"/>
+</menu>

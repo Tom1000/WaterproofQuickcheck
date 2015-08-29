@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:weightSum="1"
+        android:id="@+id/linearLO"
+    android:focusable="false">
+
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/headlineText"
+        android:id="@+id/textViewHead"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_weight="0.22"
+        android:gravity="center_horizontal"
+        android:textStyle="bold" />
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <com.androidplot.xy.XYPlot
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:id="@+id/plot" />
+
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="200dp"
+            android:text="@string/disclaimer"
+            android:id="@+id/disclaimer"
+            android:background="#ace4ff"
+            android:padding="10dp" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RatingBar
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/ratingBar"
+            android:layout_gravity="center_horizontal"
+            android:numStars="2"
+            android:nestedScrollingEnabled="false"
+            android:clickable="false"
+            android:focusable="true"
+            android:isIndicator="true"
+            android:padding="10dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/textViewRating"
+            android:layout_gravity="center"
+            android:gravity="center_vertical"
+            android:textIsSelectable="true"
+            android:textStyle="bold|italic" />
+    </LinearLayout>
+
+    <SeekBar
+        android:layout_width="261dp"
+        android:layout_height="50dp"
+        android:id="@+id/swiper"
+        android:layout_gravity="center"
+        android:enabled="false"
+        android:progress="0" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/descriptionSwipe"
+        android:id="@+id/textView2"
+        android:layout_gravity="center"
+        android:textStyle="bold" />
+
+    <Space
+        android:layout_width="20dp"
+        android:layout_height="28dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="Result will be shown here"
+        android:id="@+id/textViewResult"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_weight="0.44"
+        android:scrollbars="vertical"
+        android:linksClickable="false"
+        android:gravity="bottom"
+        android:textIsSelectable="true"
+        android:padding="10dp"
+        android:focusable="true" />
+
+</LinearLayout>
+

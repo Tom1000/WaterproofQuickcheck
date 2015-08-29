@@ -1,0 +1,39 @@
+<resources>
+    <string name="app_name">Waterproof Quickcheck</string>
+
+    <string name="disclaimer">Info &amp; Disclaimer:
+        \n
+        \nUse this app to detect if your phone is sealed.
+        \n
+        \nThis software is provided as-is and comes with no warranties or guarantees. The author assumes no responsibility for loss or damage of your phone. See "About" menu for more information.
+    </string>
+    <string name="action_settings">More</string>
+    <string name="title_activity_details">ToggleDetailed View</string>
+    <string name="action_close">Close</string>
+    <string name="detailedView">Toggle Detailed View</string>
+    <string name="settings">Settings</string>
+    <string name="start">Start</string>
+    <string name="headlineText">Using device pressure sensor to detect tightness</string>
+    <string name="descriptionSwipe">Slowly swipe this element from left to right</string>
+    <string name="about">About</string>
+    <string name="about_message">Info &amp; Disclaimer:
+        \nUse this app to detect if your phone is sealed.
+        \nAttention: This has been tested on a Sony Xperia Z3 and Z3 Compact only. In any case, use at your own risk. There is no way to safely detect if your phone is water proof. Instead, this app detects if there are specific pressure fluctuations when being touched. This gives a hint, if all covers are sealed completely.
+        \nWarning: The expected pressure curves have been determined empirical with a sample Sony Xperia Z3 device. It may be different for your phone.
+        \n
+        \nThis software is provided as-is and comes with no warranties or guarantees. The author assumes no responsibility for loss or damage of your phone.
+        \n
+        \nHow does the star rating work?
+        \nStar #1: min peak could be detected
+        \nStar #2: no significant deviation from ideal curve
+        \n
+        \nCopyright 2015 by Tom Roida.
+        \nLicensed under the Apache License, Version 2.0.
+        \nCREDITS: This software includes software:
+        \n- AndroidPlot: Copyright 2014 AndroidPlot.com under Apache License, Version 2.0
+        \n- Low pass filter: Copyright 2012-2015 Kircher Engineering, LLC, kircherelectronics.com
+        \nThanks to users alik (android-hilfe.de) , adamk7 and Bäcker (xda-developers.com) for sharing the idea behind this test.
+    </string>
+    <string name="about_title">About this app</string>
+</resources>
+
