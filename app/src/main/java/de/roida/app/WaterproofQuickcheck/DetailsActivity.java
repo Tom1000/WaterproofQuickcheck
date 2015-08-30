@@ -27,6 +27,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -40,6 +41,7 @@ import com.androidplot.util.PlotStatistics;
 import com.androidplot.xy.*;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.RatingBar;
+import android.widget.Toast;
 
 
 public class DetailsActivity extends AppCompatActivity implements SensorEventListener {
@@ -49,8 +51,9 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
     private double pressureDeviationMax;                    // max pressure deviation allowed from ideal curve. Area: time * delta pressure
     private long slideMinTime;                              // how long must the user press the slider at least? (in milliseconds)
     private static final int HISTORY_SIZE = 30;             // number of points to plot in history
-    private long pressureDropFactor = 0;                    // adapt the "ideal" curve
+    private long pressureDropFactor = 0;                    // adapt the "ideal" curve - this constant is different per device type, maybe even per individual device
     private long MeasureTime;                               // time of measurement after low peak detection in millisec
+    private static final float maxValueThreshold = 0.15f;    // when pressing, this value has to be exceeded, otherwise we do not even start to evaluate...
     private SensorManager sensorMgr = null;
     private Sensor orSensor = null;
     private TextView TextViewResult, TextViewRating;
@@ -75,9 +78,11 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
     private float alpha = 0.0f;
     private long timestamp = System.nanoTime();             // time stamps for low pass filter
     private long timestampOld = System.nanoTime();          // time of measurement after low peak detection in millisec
-    private float filteredSensorValue = 1000;                            // initial setup of filter output (in mbar)
+    private float filteredSensorValue = 1000;               // initial setup of filter output (in mbar)
     private int count = 1;
 
+    private Handler handler = new Handler();                // handler to update the UI
+    TextView TextViewHead;
 
     /** ----------------------------------------------------------------------------------------- */
 
@@ -134,6 +139,8 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
         aprHistoryPlot.setVisibility(View.INVISIBLE);
         TextViewResult.setVisibility(View.INVISIBLE);
 
+        TextViewHead = (TextView) findViewById(R.id.textViewHead);
+
         // register for orientation sensor events:
         sensorMgr = (SensorManager) getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
         for (Sensor sensor : sensorMgr.getSensorList(Sensor.TYPE_PRESSURE)) {
@@ -150,7 +157,7 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
             TextViewResult.setText("ERROR: No pressure sensor detected! This app will not work on this device!");
 
         } else
-            sensorMgr.registerListener(this, orSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorMgr.registerListener(this, orSensor, SensorManager.SENSOR_DELAY_UI); //SENSOR_DELAY_NORMAL
 
 
         //Now set the SeekBar
@@ -192,12 +199,13 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
             public void onStopTrackingTouch(SeekBar swiperTom) {
                 if (swiperTom.getProgress() > 90) {
                     ratingBarTom.setEnabled(true);
-                    if (maxValue > 0.3) {
+                    if (maxValue > maxValueThreshold) {
                         ResultText += "done: Peak was " + Float.toString(maxValue) + "  good" + "\n";
                         TextViewResult.setText(ResultText);
                         minValue = maxValue; // now we start the detection of the low peak!
                         minValueDetect = true;
                         swiperTom.setEnabled(false);
+                        ratingBarTom.setRating(0.5f);
                     } else {
                         ResultText += "done: Peak was " + Float.toString(maxValue) + "  bad" + "\n";
                         TextViewResult.setText(ResultText);
@@ -221,6 +229,8 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
         double tneu   = (SysNanoTimeNow-minValueTimestamp           )/1000000; // in milliseconds since minValue
         double deltaT = (SysNanoTimeNow-onSensorChangedLastTimestamp)/1000000; // in milliseconds since last onSensorChanged event;
         onSensorChangedLastTimestamp = SysNanoTimeNow;
+        rawValue = sensorEvent.values[0];
+        double pressureDeviationMinus = 0;   // positive value means: pressure is adapting slower than expected - good!
 
         // get rid the oldest sample in history:
         if (pressureHistorySeries.size() > HISTORY_SIZE) {
@@ -232,11 +242,10 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
 
         int sw1 = swiperTom.getProgress();
         if ((sw1==0) && !minValueDetect && (risingValuesCounter==0)) //no peak detection and no measuring in progress
-            lowPass(sensorEvent.values[0]); // writes the filtered low-pass-value into "filteredSensorValue"
-
+            lowPass(rawValue); // writes the filtered low-pass-value into "filteredSensorValue"
 
         // add the latest history sample:
-        pressureHistorySeries.addLast(null, sensorEvent.values[0] - filteredSensorValue);
+        pressureHistorySeries.addLast(null, rawValue - filteredSensorValue);
         pressureIdealSeries  .addLast(null, 9999); // do not draw because out of range
 
         // if the low peak detection is in progress, detect it!
@@ -244,8 +253,8 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
             risingValuesCounter++;
         } else
         if (minValueDetect) {
-            if ((sensorEvent.values[0]-filteredSensorValue)<minValue) {
-                minValue = sensorEvent.values[0] - filteredSensorValue; // there is a lower value
+            if ((rawValue-filteredSensorValue)<minValue) {
+                minValue = rawValue - filteredSensorValue; // there is a lower value
                 minValueTimestamp = SysNanoTimeNow;
                 SysNanoTimeTarget = SysNanoTimeNow + MeasureTime*1000000;
             }else{ // take the last value as low peak! Now start the rising pressure  curve analysis!
@@ -266,7 +275,8 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
                 ideal = -1/((tneu*tneu/pressureDropFactor+1/(-minValue)));
                 pressureIdealSeries.addLast(null, ideal);
                 pressureDeviation = 0;
-                pressureDeviation = Math.abs((ideal-(sensorEvent.values[0] - filteredSensorValue)) * deltaT/1000); // =  ((ideal-actual)* Delta T)
+                pressureDeviation      = Math.abs((ideal-(rawValue - filteredSensorValue)) * deltaT/1000); // =  ((ideal-actual)* Delta T), absolute
+                pressureDeviationMinus =         ((ideal-(rawValue - filteredSensorValue)) * deltaT/1000); // =  ((ideal-actual)* Delta T)
             }
         }
 
@@ -275,7 +285,8 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
             ideal = -1/((tneu*tneu/pressureDropFactor+1/(-minValue)));
             pressureIdealSeries.removeLast();
             pressureIdealSeries.addLast(null, ideal);
-            pressureDeviation = pressureDeviation + Math.abs((ideal-(sensorEvent.values[0] - filteredSensorValue)) * deltaT/1000); // =  ((ideal-actual)* Delta T)
+            pressureDeviation      = pressureDeviation + Math.abs((ideal-(rawValue - filteredSensorValue)) * deltaT/1000); // =  ((ideal-actual)* Delta T), absolute
+            pressureDeviationMinus = pressureDeviationMinus +    ((ideal-(rawValue - filteredSensorValue)) * deltaT/1000); // =  ((ideal-actual)* Delta T)
             if (SysNanoTimeNow>SysNanoTimeTarget){  //final evaluation + reset if full
                 // final evaluation:
                 // star #1: min peak could be detected
@@ -295,20 +306,14 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
                     ResultText += "Not OK - Device looks to be NOT sealed. Do not expose to water!" + "\n"; TextViewResult.setText(ResultText);
                     TextViewRating.setText("Not OK - Device looks NOT to be  sealed. Do not expose to water!");
                 }
-
+                if ((rating < 1.5) && (pressureDeviationMinus > 0)) {
+                    Toast.makeText(getApplicationContext(), "Try less pressure!", Toast.LENGTH_LONG).show();
+                    ResultText += "Exceeding the expected curve. Try less pressure!" + "\n"; TextViewResult.setText(ResultText);
+                }
+                // System.out.println("pressureDeviationMinus: " + Double.toString(pressureDeviationMinus)); //TODO remove
                 resetMeasurement();// reset measurement
-
             }
         }
-
-
-        aprHistoryPlot.redraw();// redraw the Plot
-        TextView TextViewHead = (TextView) findViewById(R.id.textViewHead);
-        if (currentlyOnDetails)
-            TextViewHead.setText("Pressure sensor - raw value: " + String.format("%.4f", sensorEvent.values[0])+"   filtered: " + String.format("%.4f", filteredSensorValue));
-        else
-            TextViewHead.setText("Pressure sensor");
-        rawValue = sensorEvent.values[0];
     }
 
     public void resetMeasurement(){
@@ -355,6 +360,20 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
         return true;
     }
 
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+
+            aprHistoryPlot.redraw();// redraw the Plot
+
+            TextViewHead.setText("Pressure sensor - raw value: " + String.format("%.3f", rawValue)+"  filtered: " + String.format("%.3f", filteredSensorValue)); //TODO line wrap z3c?
+
+            if (currentlyOnDetails)
+                handler.postDelayed(this, 100);
+
+        }
+    };
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -369,6 +388,7 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
                 disclaimer.setEnabled(false);
                 disclaimer.setVisibility(View.INVISIBLE);
                 currentlyOnDetails = true;
+                handler.postDelayed(runnable, 100); //activte the handler with a freq. of 10hz to update graph.
                 return true;
             } else {
                 currentlyOnDetails = false;
@@ -377,6 +397,9 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
                 TextView disclaimer = (TextView) findViewById(R.id.disclaimer);
                 disclaimer.setEnabled(true);
                 disclaimer.setVisibility(View.VISIBLE);
+                handler.removeCallbacks(runnable);  //Stop handler for UI update
+                TextViewHead.setText(R.string.headline);
+
             }
         }
         if (id == R.id.action_settings) {
@@ -391,7 +414,6 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
         super.onPause();
         sensorMgr.unregisterListener(this);
         resetMeasurement();// reset measurement
-        //TODO test this
     }
 
     protected void onResume() {
@@ -412,7 +434,7 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
 
         // Calculate alpha
         alpha = timeConstant / (timeConstant + dt);
-        filteredSensorValue = alpha * filteredSensorValue + (1 - alpha) * input; //TODO when measuring ends, there is a step in the graph...?!?!
+        filteredSensorValue = alpha * filteredSensorValue + (1 - alpha) * input;
         timestampOld = timestamp;
     }
 
@@ -435,7 +457,7 @@ public class DetailsActivity extends AppCompatActivity implements SensorEventLis
         MeasureTime = Long.parseLong(SP.getString("pref_measure_time", "9999"));
         timeConstant = Float.parseFloat(SP.getString("pref_time_constant", "9999"));
         pressureDropFactor = Long.parseLong(SP.getString("pref_ideal_pressure_drop", "0"));
-        System.out.println("PrefsLoaded.   " + Long.toString(slideMinTime)); //TODO ?
+        //System.out.println("PrefsLoaded.   " + Long.toString(slideMinTime));
     }
 
 

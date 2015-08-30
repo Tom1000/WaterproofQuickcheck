@@ -39,6 +39,8 @@ public class ResetDefDiagPref extends DialogPreference {
 
             //Call this method to trigger the execution of the setOnPreferenceChangeListener() method at the PrefsActivity
             // getOnPreferenceChangeListener().onPreferenceChange(this, true); Tom not used here - see onResume instead
+
+            System.exit(1);
         }
     }
 }

@@ -14,7 +14,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/headlineText"
+        android:text="@string/headline"
         android:id="@+id/textViewHead"
         android:layout_marginTop="10dp"
         android:layout_marginLeft="10dp"
@@ -69,7 +69,7 @@
     </LinearLayout>
 
     <SeekBar
-        android:layout_width="261dp"
+        android:layout_width="200dp"
         android:layout_height="50dp"
         android:id="@+id/swiper"
         android:layout_gravity="center"
@@ -90,17 +90,16 @@
 
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="90dp"
         android:text="Result will be shown here"
         android:id="@+id/textViewResult"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_weight="0.44"
         android:scrollbars="vertical"
-        android:linksClickable="false"
         android:gravity="bottom"
         android:textIsSelectable="true"
         android:padding="10dp"
-        android:focusable="true" />
+        android:layout_weight="0.41"
+        />
 
 </LinearLayout>
 
